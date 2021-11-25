@@ -43,14 +43,14 @@ celocidade INT,
 evento_ind INT,
 idling_ind INT)
 ROW FORMAT DELIMITED FIELD TERMINATED BY ","
-STORED BY TEXTFILE
+STORED AS TEXTFILE
 LOCATION '/tmp/data/external/geolocalizacao/geolocalizacao.csv'
 TBLPROPERTIES("skip.header.line/count"="1");
 ```
 
 #### Criando a tabela gerenciada geolocalizacao
 ```
-CREATE EXTENAL TABLE geolocalizacao(
+CREATE TABLE geolocalizacao(
 caminhaoid STRING, 
 motoristaid STRING, 
 evento STRING, 
@@ -62,7 +62,7 @@ celocidade INT,
 evento_ind INT,
 idling_ind INT)
 ROW FORMAT DELIMITED FIELD TERMINATED BY "|"
-STORED BY ORC;
+STORED AS ORC;
 ```
 
 #### Inserindo dados da tabela ext_geolocalizacao para geolocalizacao 
