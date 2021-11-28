@@ -133,7 +133,8 @@ Essa tabela nos mostra a média de quantas milhas os caminhões da empresa fazem
 
 ```SELECT * FROM mediamilhagem LIMIT 15```
 
-(ADD IMAGEM DE AMOSTRA DA TABELA meamilhagem)
+![MediaMilhagem](https://github.com/BrunoHarlis/FatorDeRisco/blob/main/ImagensFatorDeRisco/MediaMilhagem.png)
+
 
 Agora vamos criar a tabela MotoristaMilhagem usando a tabela MilhasCaminhao. Nela conterá o total de milhas (totmiles) percorrida or cada motorista.
 
@@ -147,7 +148,10 @@ FROM milhascaminhao
 GROUP BY driverid;
 ```
 
-Vamos ve ruma a mostra da tabela MotoristaMilhagem.
+Vamos ver uma a mostra da tabela MotoristaMilhagem.
 
-(IMAGEM COM AMOSTRA DE MotoristaMilhagem)
+```SELECT * FROM MotoristaMilhagem LIMIT 15```
+
+![MotoristaMilhagem](https://github.com/BrunoHarlis/FatorDeRisco/blob/main/ImagensFatorDeRisco/MotoristaMilhagem.png)
+
 
