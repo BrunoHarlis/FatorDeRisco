@@ -10,7 +10,7 @@ O primeiro passo será carregar os dados colhidos pelos sensorres dos caminhões
 
 __geolocalizacao.csv__ - Possui os dados de geolocalização dos caminhões. Contem as colunas localização caminhão, data, hora, evento, veloidade, etc.
 
-__caminhoes.csv__ - Possui informações sobre o modelo de caminhão, motoristaid, caminhaoid e informações de quilometragem.
+__caminhoes.csv__ - Possui informações sobre o modelo de caminhão, motoristaid, caminhaoid e informações de milhagem.
 
 #### Criar uma pasta no hdfs para armazenar os dados
 ```
@@ -99,7 +99,7 @@ INSERT INTO caminhoes
 SELECT * FROM ext_caminhoes;
 ```
 
-#### Ecluindo as tabelas externas "ext_geolocalizacao" e "ext_caminhoes"
+#### Exluindo as tabelas externas "ext_geolocalizacao" e "ext_caminhoes"
 ```
 DROP TABLE ext_geolocalizacao;
 DROP TABLE ext_caminhoes;
@@ -107,7 +107,7 @@ DROP TABLE ext_caminhoes;
 
 Até agora somente preparamos os dados para podermos efetivamente começar a realizar algumas análizes. Nosso objetivo principal será esclarecer os riscos que a empresa corre devido o cansaço dos motoristas, caminhões usados e o impacto de vários eventos de transporte sobre o risco.
 
-Vamos começar calculando a quantidade de milhas por galão que cada caminhão consome. Começaremos com nossa tabela de dados de caminhões. Precisamos somar todas as milhas e colunas de combustível por caminhão. O Hive tem uma série de funções que podem ser usadas para reformatar uma tabela. A palavra-chave LATERAL VIEW é como invocamos as coisas. A função stack() nos permite reestruturar os dados em 3 colunas rotuladas rdate, gas e mile (ex: 'june13', june13_miles, june13_gas) que perfazem um máximo de 54 linhas. Escolhemos truckid, driverid, rdate, miles, gas de nossa tabela original e adicionamos uma coluna chamada mpg que calculada a quilometragem média (miles/gas).
+Vamos começar calculando a quantidade de milhas por galão que cada caminhão consome. Começaremos com nossa tabela de dados de caminhões. Precisamos somar todas as milhas e colunas de combustível por caminhão. O Hive tem uma série de funções que podem ser usadas para reformatar uma tabela. A palavra-chave LATERAL VIEW é como invocamos as coisas. A função stack() nos permite reestruturar os dados em 3 colunas rotuladas rdate, gas e mile (ex: 'june13', june13_miles, june13_gas) que perfazem um máximo de 54 linhas. Escolhemos truckid, driverid, rdate, miles, gas de nossa tabela original e adicionamos uma coluna chamada mpg que calculada a milhagem média (miles/gas).
 
 ```
 CREATE TABLE milhascaminhao 
@@ -131,4 +131,23 @@ GROUP BY truckid;
 
 Essa tabela nos mostra a média de quantas milhas os caminhões da empresa fazem para cada galão de combustível. Abaixo temos uma amostra desses dados.
 
+```SELECT * FROM mediamilhagem LIMIT 15```
+
+(ADD IMAGEM DE AMOSTRA DA TABELA meamilhagem)
+
+Agora vamos criar a tabela MotoristaMilhagem usando a tabela MilhasCaminhao. Nela conterá o total de milhas (totmiles) percorrida or cada motorista.
+
+
+```
+CREATE TABLE MotoristaMilhagem
+STORED AS ORC
+AS
+SELECT driverid, sum(miles) totmiles
+FROM milhascaminhao
+GROUP BY driverid;
+```
+
+Vamos ve ruma a mostra da tabela MotoristaMilhagem.
+
+(IMAGEM COM AMOSTRA DE MotoristaMilhagem)
 
