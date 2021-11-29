@@ -130,15 +130,14 @@ GROUP BY truckid;
 ```
 
 Essa tabela nos mostra a média de quantas milhas os caminhões da empresa fazem para cada galão de combustível. Abaixo temos uma amostra desses dados.
-
-```SELECT * FROM mediamilhagem LIMIT 15```
+```
+SELECT * FROM mediamilhagem LIMIT 15`
+```
 
 ![MediaMilhagem](https://github.com/BrunoHarlis/FatorDeRisco/blob/main/ImagensFatorDeRisco/MediaMilhagem.png)
 
 
 Agora vamos criar a tabela MotoristaMilhagem usando a tabela MilhasCaminhao. Nela conterá o total de milhas (totmiles) percorrida or cada motorista.
-
-
 ```
 CREATE TABLE MotoristaMilhagem
 STORED AS ORC
@@ -149,8 +148,9 @@ GROUP BY driverid;
 ```
 
 Vamos ver uma a mostra da tabela MotoristaMilhagem.
-
-```SELECT * FROM MotoristaMilhagem LIMIT 15```
+```
+SELECT * FROM MotoristaMilhagem LIMIT 15
+```
 
 ![MotoristaMilhagem](https://github.com/BrunoHarlis/FatorDeRisco/blob/main/ImagensFatorDeRisco/MotoristaMilhagem.png)
 
@@ -178,7 +178,8 @@ hiveContext.sql("SHOW TABLES").show()
 ```
 
 Ainda não temos nenhuma tabela temporária dessa instância
-![imagem spark0tabelas]()
+
+![imagem spark0tabelas](https://github.com/BrunoHarlis/FatorDeRisco/blob/main/ImagensFatorDeRisco/spark_0_tabelas.png)
 
 
 Nessa etapa vamos importar dados CSV em um DataFrame sem especificar nenhum Schema pré-definido. Em seguida, com o DataFrame criado, podemos registrar uma TempView.
@@ -189,12 +190,17 @@ geolocalizacaoDF.createOrReplaceTempView("geolocalizacao")
 hiveContext.sql("SELECT * FROM geolocalizacao LIMIT 15").show()
 ```
 Aqui está uma amostra da tabela temporária geolocalização que acabamos de criar
----IMAGEM SPARK_GEOLOCALIZACAO---
+
+![spark_geolocalizacao](https://github.com/BrunoHarlis/FatorDeRisco/blob/main/ImagensFatorDeRisco/spark_geolocalizacao.png)
+
 
 Se olharmos a descrição da tabela, percebemos que todos os dados foram lançados como String, pois não especificamos nenhum schema.
+```
+hiveContext.sql("DESCRIBE geolocalizacao").show()
+```
 
-```hiveContext.sql("DESCRIBE geolocalizacao").show()```
----IMAGEM SPARK DESC GEOLOCALIZACAO---
+![spark_desc_geolocalizacao](https://github.com/BrunoHarlis/FatorDeRisco/blob/main/ImagensFatorDeRisco/spark_desc_geolocalizacao.png)
+
 
 Em contrapartida, vamos carreagar dados de um arquivo csv para um DataFrame, só que dessa vez com um schema definido. A biblioteca pyspark.sql.types nos permite definir os tipos de dados do nosso schema.
 ```
@@ -203,14 +209,19 @@ from pyspark.sql.types import *
 motoristaMilhagemSchema = StructType().add("driverid", "string", True).add("totmiles", "double", True)
 motoristaMilhagemDF = spark.read.csv('hdfs:///tmp/data/motoristamilhagem/motoristamilhagem.csv', header=True, schema=motoristaMilhagemSchema)
 ```
+
 Agora vamis criar uma Temp View (motoristamilhagem) do dataframe "motoristaMilhagemDF" e ver se a tabela possui o schema que definimos.
 ```
 motoristaMilhagemDF.createOrReplaceTempView("motoristamilhagem")
 hiveContext.sql("DESC  motoristamilhagem").show()
 ```
----IMAGEM DESC  motoristamilhagem ---
+
+![DESC  motoristamilhagem](https://github.com/BrunoHarlis/FatorDeRisco/blob/main/ImagensFatorDeRisco/spark_desc_motoristamilhagem.png)
+
 
 Aqui está uma amostra de como a tabela "motoristaMilhagem" ficou.
-```hiveContext.sql("SELECT * FROM motoristamilhagem LIMIT 15").show()```
+```
+hiveContext.sql("SELECT * FROM motoristamilhagem LIMIT 15").show()
+```
 
----IMAGEM SPARK MOTORISTAMILHAGEM---
+![IMAGEM SPARK MOTORISTAMILHAGEM](https://github.com/BrunoHarlis/FatorDeRisco/blob/main/ImagensFatorDeRisco/spark_motoristamilhagem.png)
