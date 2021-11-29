@@ -14,18 +14,18 @@ __caminhoes.csv__ - Possui informações sobre o modelo de caminhão, motoristai
 
 #### Criar uma pasta no hdfs para armazenar os dados
 ```
-hdfs dfs -mkdir -p /tmp/data/external/{geolocalizacao,caminhoes}
-```
-
-#### Carregando os dados
-```
-hdfs dfs -put geolocalizacao.csv /tmp/data/external/geolocalizacao
-hdfs dfs -put caminhoes.csv /tmp/data/external/caminhoes
+hdfs dfs -mkdir -p /tmp/data/{geolocalizacao,caminhoes}
 ```
 
 #### Definir permissão de gravação no diretório external
 ```
-hdfs dfs -chmod 777 /tmp/data/external
+hdfs dfs -chmod 777 /tmp/data
+```
+
+#### Carregando os dados
+```
+hdfs dfs -put geolocalizacao.csv /tmp/data/geolocalizacao
+hdfs dfs -put caminhoes.csv /tmp/data/caminhoes
 ```
 
 ## Criar tabelas no Hive
@@ -47,7 +47,7 @@ event_ind INT,
 idling_ind INT)
 ROW FORMAT DELIMITED FIELDS TERMINATED BY ","
 STORED AS TEXTFILE
-LOCATION '/tmp/data/external/geolocalizacao'
+LOCATION '/tmp/data/geolocalizacao'
 TBLPROPERTIES("skip.header.line.count"="1");
 ```
 
@@ -154,4 +154,63 @@ Vamos ver uma a mostra da tabela MotoristaMilhagem.
 
 ![MotoristaMilhagem](https://github.com/BrunoHarlis/FatorDeRisco/blob/main/ImagensFatorDeRisco/MotoristaMilhagem.png)
 
+Usaremos esses resultados para calcular todos os fatores de risco dos caminhoneiros. Faremos isso através do Spark. Primeiro, vamos armazenar nossa tabela MotoristaMilhagem em formato CSV no HDFS.
 
+```
+INSERT OVERWRITE DIRECTORY 'hdfs:///tmp/data/motoristamilhagem'
+ROW FORMAT DELIMITED 
+FIELDS TERMINATED BY ',' 
+select * from motoristamilhagem;
+```
+
+Nesse momento foi exportado o arquivo 000000_0, vamos renomea-lo para motoristamilhagem.csv
+```hdfs dfs -mv /tmp/data/motoristamilhagem/000000_0 /tmp/data/motoristamilhagem/motoristamilhagem.csv```
+
+Agora finalmente vamos para a analize com Spark. O Script completo .py está [aqui]().
+
+
+Importando a biblioteca sql e instanciando SparkSession
+```
+from pyspark.sql import SparkSession
+
+hiveContext = SparkSession.builder.appName("Fator de Risco sql").getOrCreate()
+hiveContext.sql("SHOW TABLES").show()
+```
+
+Ainda não temos nenhuma tabela temporária dessa instância
+![imagem spark0tabelas]()
+
+
+Nessa etapa vamos importar dados CSV em um DataFrame sem especificar nenhum Schema pré-definido. Em seguida, com o DataFrame criado, podemos registrar uma TempView.
+```
+geolocalizacaoDF = spark.read.csv('hdfs:///tmp/data/geolocalizacao/geolocalizacao.csv', header=True)
+geolocalizacaoDF.createOrReplaceTempView("geolocalizacao")
+
+hiveContext.sql("SELECT * FROM geolocalizacao LIMIT 15").show()
+```
+Aqui está uma amostra da tabela temporária geolocalização que acabamos de criar
+---IMAGEM SPARK_GEOLOCALIZACAO---
+
+Se olharmos a descrição da tabela, percebemos que todos os dados foram lançados como String, pois não especificamos nenhum schema.
+
+```hiveContext.sql("DESCRIBE geolocalizacao").show()```
+---IMAGEM SPARK DESC GEOLOCALIZACAO---
+
+Em contrapartida, vamos carreagar dados de um arquivo csv para um DataFrame, só que dessa vez com um schema definido. A biblioteca pyspark.sql.types nos permite definir os tipos de dados do nosso schema.
+```
+from pyspark.sql.types import *
+
+motoristaMilhagemSchema = StructType().add("driverid", "string", True).add("totmiles", "double", True)
+motoristaMilhagemDF = spark.read.csv('hdfs:///tmp/data/motoristamilhagem/motoristamilhagem.csv', header=True, schema=motoristaMilhagemSchema)
+```
+Agora vamis criar uma Temp View (motoristamilhagem) do dataframe "motoristaMilhagemDF" e ver se a tabela possui o schema que definimos.
+```
+motoristaMilhagemDF.createOrReplaceTempView("motoristamilhagem")
+hiveContext.sql("DESC  motoristamilhagem").show()
+```
+---IMAGEM DESC  motoristamilhagem ---
+
+Aqui está uma amostra de como a tabela "motoristaMilhagem" ficou.
+```hiveContext.sql("SELECT * FROM motoristamilhagem LIMIT 15").show()```
+
+---IMAGEM SPARK MOTORISTAMILHAGEM---
