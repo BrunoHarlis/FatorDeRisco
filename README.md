@@ -225,3 +225,87 @@ hiveContext.sql("SELECT * FROM motoristamilhas LIMIT 15").show()
 ```
 
 ![IMAGEM SPARK MOTORISTAMILHAGEM](https://github.com/BrunoHarlis/FatorDeRisco/blob/main/ImagensFatorDeRisco/spark_motoristamilhagem.png)
+
+
+#### Criando RDDs a partir de tabelas
+```
+geolocalizacao_temp0 = hiveContext.sql("SELECT * FROM geolocalizacao")
+motoristamilhas_temp0 = hiveContext.sql("SELECT * FROM motoristamilhas")
+```
+
+E agora vamos criar tabelas globais temporárias a partir dos DataFrames que criamos
+```
+geolocalizacao_temp0.createOrReplaceTempView("geolocalizacao_temp0")
+motoristamilhas_temp0.createOrReplaceTempView("motoristamilhas_temp0")
+
+hiveContext.sql("SHOW TABLES").show()
+```
+
+Agora vamos fazer uma filtragem nos dados da tabela geolocalizacao para descobrir quais motoristas tiveram ocorrência de eventos não normais.
+```
+geolocalizacao_temp1 = hiveContext.sql("SELECT diverid, COUNT(driverid) occurance FROM geolocalizacao_temp0 WHERE event!='normal' GROUP BY driverid")
+
+geolocalizacao_temp1.show(15)
+```
+Aqui está o resultado parcial de motoristas com eventos anormais.
+--- IMAGEM geolocalizacao_temp1 ----
+
+
+Registraremos esta tabela filtrada como uma tabela temporária para que as consultas SQL subsequentes possam ser aplicadas a ela.
+```
+geolocalizacao_temp1.createOrReplaceTempView("geolocalizacao_temp1")
+hiveContext.sql("SHOW TABLES").show()
+```
+
+Agora e possível vizualizar os dados da tabela através de consultas SQL e ver o total de eventos anormais para cada motorista.
+```
+hiveContext.sql("SELECT * FROM geolocalizacao_temp1 LIMIT 15").show()
+```
+
+---IMAGEM DA CONSULTA SQL---
+
+## Executar uma junção
+
+Agora precisamso realizar uma operação de junção. A tabela geolocalizacao_temp1 possui os dados dos motoristas que possuem eventos anormais e a tabela motoristamilhas_temp0 possui o total de milhas percorridas por cada motorista. Vamos juntas esses dados que nos interessa em uma tabela só.
+```
+juncao = hiveContext.sql("SELECT a.driverid, a.occurance, b.totmilhas FROM geolocalizacao_temp1 a, motoristamilhas_temp0 b WHERE a.driverid=b.motoristaid")
+```
+
+Registraremos essa tabela juncao com uma tabela temporária para consultas SQL subsequentes.
+```
+juncao.createOrReplaceTempView("juncao")
+hiveContext.sql("SHOW TABLES").show()
+```
+--- IMAGEM DE TODAS AS TABELAS FEITAS ---
+
+Vamos ver como ficou a tabela juncao
+```
+hiveContext.sql("SELECT * FROM juncao LIMIT 15").show()
+```
+--- IMAGEM DA TABELA JUNCAO ---
+
+## Computanto o fator de risco para o motorista
+
+Nessa seção associaremos um "fator de risco do motorista" para cada motorista. Esse fator de risco do motorista é o numeor de ocorrências anormais sobre o numero total de milhas percorridas pelo motorista. Ou seja, uma número alto de ocorrências anormais em um curto período de milhas percorridas, é um indicador de alto risco. Vamkso fazer isso com uma consulta SQL.
+```
+fator_de_risco = hiveContext.sql("SELECT driverid,occurance,totmilhas, totmilhas/occurance fatorrisco FROM juncao")
+```
+
+Vamos criar a tabela temporária para consultas SQL e vermos como ficaram os dados.
+```
+fator_de_risco.createOrReplaceTempView("fator_de_risco")
+hiveContext.sql("SHOW TABLES").show()
+
+hiveContext.sql("SELECT * FROM juncao LIMIT 15").show()
+```
+--- IMAGEM FATOR DE RISCO ----
+
+## Salvando a tabela como CSV
+
+Agara que encontramos o fator de risco para cada motorista, podemos salvar esse resultado como um arquivo CSV no HDFS.
+```
+fator_de_risco.coalesce(1).write.csv("hdfs:///tmp/data/fatorderisco")
+```
+
+
+
