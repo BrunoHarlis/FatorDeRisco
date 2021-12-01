@@ -134,7 +134,7 @@ Essa tabela nos mostra a média de quantas milhas os caminhões da empresa fazem
 SELECT * FROM mediamilhas LIMIT 15;
 ```
 
-![MediaMilhagem](https://github.com/BrunoHarlis/FatorDeRisco/blob/main/ImagensFatorDeRisco/MediaMilhagem.png)
+![MediaMilhas](https://github.com/BrunoHarlis/FatorDeRisco/blob/main/ImagensFatorDeRisco/MediaMilhas.png)
 
 
 Agora vamos criar a tabela MotoristaMilhas usando a tabela MilhasCaminhao. Nela conterá o total de milhas (totmilhas) percorrida por cada motorista.
@@ -152,7 +152,7 @@ Vamos ver uma a mostra da tabela MotoristaMilhas.
 SELECT * FROM MotoristaMilhas LIMIT 15;
 ```
 
-![MotoristaMilhagem](https://github.com/BrunoHarlis/FatorDeRisco/blob/main/ImagensFatorDeRisco/MotoristaMilhagem.png)
+![MotoristaMilhas](https://github.com/BrunoHarlis/FatorDeRisco/blob/main/ImagensFatorDeRisco/MotoristaMilhas.png)
 
 Usaremos esses resultados para calcular todos os fatores de risco dos caminhoneiros. Faremos isso através do Spark. Primeiro, vamos armazenar nossa tabela MotoristaMilhas em formato CSV no HDFS.
 
@@ -216,7 +216,7 @@ motoristaMilhasDF.createOrReplaceTempView("motoristamilhas")
 hiveContext.sql("DESC  motoristamilhas").show()
 ```
 
-![DESC  motoristamilhagem](https://github.com/BrunoHarlis/FatorDeRisco/blob/main/ImagensFatorDeRisco/spark_desc_motoristamilhagem.png)
+![DESC  motoristamilhas](https://github.com/BrunoHarlis/FatorDeRisco/blob/main/ImagensFatorDeRisco/spark_desc_motoristaMilhas.png)
 
 
 Aqui está uma amostra de como a tabela "motoristaMilhas" ficou.
@@ -224,7 +224,7 @@ Aqui está uma amostra de como a tabela "motoristaMilhas" ficou.
 hiveContext.sql("SELECT * FROM motoristamilhas LIMIT 15").show()
 ```
 
-![IMAGEM SPARK MOTORISTAMILHAGEM](https://github.com/BrunoHarlis/FatorDeRisco/blob/main/ImagensFatorDeRisco/spark_motoristamilhagem.png)
+![IMAGEM SPARK MOTORISTAMILHAS](https://github.com/BrunoHarlis/FatorDeRisco/blob/main/ImagensFatorDeRisco/spark_motoristamilhas.png)
 
 
 #### Criando RDDs a partir de tabelas
@@ -247,22 +247,23 @@ geolocalizacao_temp1 = hiveContext.sql("SELECT diverid, COUNT(driverid) occuranc
 
 geolocalizacao_temp1.show(15)
 ```
+
 Aqui está o resultado parcial de motoristas com eventos anormais.
---- IMAGEM geolocalizacao_temp1 ----
+
+[eventos anormais](https://github.com/BrunoHarlis/FatorDeRisco/blob/main/ImagensFatorDeRisco/geolocalizacao_temp1.png)
 
 
 Registraremos esta tabela filtrada como uma tabela temporária para que as consultas SQL subsequentes possam ser aplicadas a ela.
 ```
 geolocalizacao_temp1.createOrReplaceTempView("geolocalizacao_temp1")
-hiveContext.sql("SHOW TABLES").show()
 ```
 
-Agora e possível vizualizar os dados da tabela através de consultas SQL e ver o total de eventos anormais para cada motorista.
+Agora é possível vizualizar os dados da tabela através de consultas SQL e ver o total de eventos anormais para cada motorista.
 ```
 hiveContext.sql("SELECT * FROM geolocalizacao_temp1 LIMIT 15").show()
 ```
 
----IMAGEM DA CONSULTA SQL---
+[](https://github.com/BrunoHarlis/FatorDeRisco/blob/main/ImagensFatorDeRisco/geolocalizacao_temp1.png)
 
 ## Executar uma junção
 
@@ -276,13 +277,13 @@ Registraremos essa tabela juncao com uma tabela temporária para consultas SQL s
 juncao.createOrReplaceTempView("juncao")
 hiveContext.sql("SHOW TABLES").show()
 ```
---- IMAGEM DE TODAS AS TABELAS FEITAS ---
+[todas as tabelas](https://github.com/BrunoHarlis/FatorDeRisco/blob/main/ImagensFatorDeRisco/totas%20tabelas%20ate%20juncao.png)
 
 Vamos ver como ficou a tabela juncao
 ```
 hiveContext.sql("SELECT * FROM juncao LIMIT 15").show()
 ```
---- IMAGEM DA TABELA JUNCAO ---
+[juncao](https://github.com/BrunoHarlis/FatorDeRisco/blob/main/ImagensFatorDeRisco/tabela%20juncao.png)
 
 ## Computanto o fator de risco para o motorista
 
@@ -295,10 +296,14 @@ Vamos criar a tabela temporária para consultas SQL e vermos como ficaram os dad
 ```
 fator_de_risco.createOrReplaceTempView("fator_de_risco")
 hiveContext.sql("SHOW TABLES").show()
-
-hiveContext.sql("SELECT * FROM juncao LIMIT 15").show()
 ```
---- IMAGEM FATOR DE RISCO ----
+
+[todas as tabelas criadas](https://github.com/BrunoHarlis/FatorDeRisco/blob/main/ImagensFatorDeRisco/todas%20as%20tabelas%20fatorderisco.png)
+
+```
+hiveContext.sql("SELECT * FROM fator_de_risco LIMIT 15").show()
+```
+[fator de risco](https://github.com/BrunoHarlis/FatorDeRisco/blob/main/ImagensFatorDeRisco/fator%20de%20risco%202.png)
 
 ## Salvando a tabela como CSV
 
@@ -306,6 +311,3 @@ Agara que encontramos o fator de risco para cada motorista, podemos salvar esse 
 ```
 fator_de_risco.coalesce(1).write.csv("hdfs:///tmp/data/fatorderisco")
 ```
-
-
-
