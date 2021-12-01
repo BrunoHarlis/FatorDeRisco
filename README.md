@@ -107,7 +107,7 @@ DROP TABLE ext_caminhoes;
 
 Até agora somente preparamos os dados para podermos efetivamente começar a realizar algumas análizes. Nosso objetivo principal será esclarecer os riscos que a empresa corre devido o cansaço dos motoristas, caminhões usados e o impacto de vários eventos de transporte sobre o risco.
 
-Vamos começar calculando a quantidade de milhas por galão que cada caminhão consome. Começaremos com nossa tabela de dados de caminhões. Precisamos somar todas as milhas e colunas de combustível por caminhão. O Hive tem uma série de funções que podem ser usadas para reformatar uma tabela. A palavra-chave LATERAL VIEW é como invocamos as coisas. A função stack() nos permite reestruturar os dados em 3 colunas rotuladas rdate, gas e mile (ex: 'june13', june13_miles, june13_gas) que perfazem um máximo de 54 linhas. Escolhemos truckid, driverid, rdate, miles, gas de nossa tabela original e adicionamos uma coluna chamada mpg que calculada a milhagem média (miles/gas).
+Vamos começar calculando a quantidade de milhas por galão que cada caminhão consome. Começaremos com nossa tabela de dados de caminhões. Precisamos somar todas as milhas e colunas de combustível por caminhão. O Hive tem uma série de funções que podem ser usadas para reformatar uma tabela. A palavra-chave LATERAL VIEW é como invocamos as coisas. A função stack() nos permite reestruturar os dados em 3 colunas rotuladas data, milhas, combustivel (ex: 'june13', june13_miles, june13_gas) que perfazem um máximo de 54 linhas. Escolhemos caminhaoid, motoristaid, data, milhas, combustivel de nossa tabela original e adicionamos uma coluna chamada mpg que calculada a milhagem média (milhas/combustivel).
 
 ```
 CREATE TABLE milhascaminhao 
@@ -137,34 +137,34 @@ SELECT * FROM mediamilhas LIMIT 15;
 ![MediaMilhagem](https://github.com/BrunoHarlis/FatorDeRisco/blob/main/ImagensFatorDeRisco/MediaMilhagem.png)
 
 
-Agora vamos criar a tabela MotoristaMilhagem usando a tabela MilhasCaminhao. Nela conterá o total de milhas (totmiles) percorrida or cada motorista.
+Agora vamos criar a tabela MotoristaMilhas usando a tabela MilhasCaminhao. Nela conterá o total de milhas (totmilhas) percorrida por cada motorista.
 ```
-CREATE TABLE MotoristaMilhagem
+CREATE TABLE MotoristaMilhas
 STORED AS ORC
 AS
-SELECT driverid, sum(miles) totmiles
+SELECT motoristaid, sum(milhas) totmilhas
 FROM milhascaminhao
-GROUP BY driverid;
+GROUP BY motoristaid;
 ```
 
-Vamos ver uma a mostra da tabela MotoristaMilhagem.
+Vamos ver uma a mostra da tabela MotoristaMilhas.
 ```
-SELECT * FROM MotoristaMilhagem LIMIT 15
+SELECT * FROM MotoristaMilhas LIMIT 15;
 ```
 
 ![MotoristaMilhagem](https://github.com/BrunoHarlis/FatorDeRisco/blob/main/ImagensFatorDeRisco/MotoristaMilhagem.png)
 
-Usaremos esses resultados para calcular todos os fatores de risco dos caminhoneiros. Faremos isso através do Spark. Primeiro, vamos armazenar nossa tabela MotoristaMilhagem em formato CSV no HDFS.
+Usaremos esses resultados para calcular todos os fatores de risco dos caminhoneiros. Faremos isso através do Spark. Primeiro, vamos armazenar nossa tabela MotoristaMilhas em formato CSV no HDFS.
 
 ```
-INSERT OVERWRITE DIRECTORY 'hdfs:///tmp/data/motoristamilhagem'
+INSERT OVERWRITE DIRECTORY 'hdfs:///tmp/data/motoristamilhas'
 ROW FORMAT DELIMITED 
 FIELDS TERMINATED BY ',' 
-select * from motoristamilhagem;
+SELECT * from motoristamilhas;
 ```
 
-Nesse momento foi exportado o arquivo 000000_0, vamos renomea-lo para motoristamilhagem.csv
-```hdfs dfs -mv /tmp/data/motoristamilhagem/000000_0 /tmp/data/motoristamilhagem/motoristamilhagem.csv```
+Nesse momento foi exportado o arquivo 000000_0, vamos renomea-lo para motoristamilhas.csv
+```hdfs dfs -mv /tmp/data/motoristamilhas/000000_0 /tmp/data/motoristamilhas/motoristamilhas.csv```
 
 Agora finalmente vamos para a analize com Spark. O Script completo .py está [aqui]().
 
@@ -194,7 +194,7 @@ Aqui está uma amostra da tabela temporária geolocalização que acabamos de cr
 ![spark_geolocalizacao](https://github.com/BrunoHarlis/FatorDeRisco/blob/main/ImagensFatorDeRisco/spark_geolocalizacao.png)
 
 
-Se olharmos a descrição da tabela, percebemos que todos os dados foram lançados como String, pois não especificamos nenhum schema.
+Se olharmos a descrição da tabela, percebemos que todos os dados foram lançados como String, e as colunas com nomes em inglês pois não especificamos nenhum schema.
 ```
 hiveContext.sql("DESCRIBE geolocalizacao").show()
 ```
@@ -206,22 +206,106 @@ Em contrapartida, vamos carreagar dados de um arquivo csv para um DataFrame, só
 ```
 from pyspark.sql.types import *
 
-motoristaMilhagemSchema = StructType().add("driverid", "string", True).add("totmiles", "double", True)
-motoristaMilhagemDF = spark.read.csv('hdfs:///tmp/data/motoristamilhagem/motoristamilhagem.csv', header=True, schema=motoristaMilhagemSchema)
+motoristaMilhasSchema = StructType().add("motoristaid", "string", True).add("totmilhas", "double", True)
+motoristaMilhasDF = spark.read.csv('hdfs:///tmp/data/motoristamilhas/motoristamilhas.csv', header=True, schema=motoristaMilhasSchema)
 ```
 
-Agora vamis criar uma Temp View (motoristamilhagem) do dataframe "motoristaMilhagemDF" e ver se a tabela possui o schema que definimos.
+Agora vamos criar uma Temp View (motoristamilhas) do dataframe "motoristaMilhasDF" e ver se a tabela possui o schema que definimos.
 ```
-motoristaMilhagemDF.createOrReplaceTempView("motoristamilhagem")
-hiveContext.sql("DESC  motoristamilhagem").show()
+motoristaMilhasDF.createOrReplaceTempView("motoristamilhas")
+hiveContext.sql("DESC  motoristamilhas").show()
 ```
 
 ![DESC  motoristamilhagem](https://github.com/BrunoHarlis/FatorDeRisco/blob/main/ImagensFatorDeRisco/spark_desc_motoristamilhagem.png)
 
 
-Aqui está uma amostra de como a tabela "motoristaMilhagem" ficou.
+Aqui está uma amostra de como a tabela "motoristaMilhas" ficou.
 ```
-hiveContext.sql("SELECT * FROM motoristamilhagem LIMIT 15").show()
+hiveContext.sql("SELECT * FROM motoristamilhas LIMIT 15").show()
 ```
 
 ![IMAGEM SPARK MOTORISTAMILHAGEM](https://github.com/BrunoHarlis/FatorDeRisco/blob/main/ImagensFatorDeRisco/spark_motoristamilhagem.png)
+
+
+#### Criando RDDs a partir de tabelas
+```
+geolocalizacao_temp0 = hiveContext.sql("SELECT * FROM geolocalizacao")
+motoristamilhas_temp0 = hiveContext.sql("SELECT * FROM motoristamilhas")
+```
+
+E agora vamos criar tabelas globais temporárias a partir dos DataFrames que criamos
+```
+geolocalizacao_temp0.createOrReplaceTempView("geolocalizacao_temp0")
+motoristamilhas_temp0.createOrReplaceTempView("motoristamilhas_temp0")
+
+hiveContext.sql("SHOW TABLES").show()
+```
+
+Agora vamos fazer uma filtragem nos dados da tabela geolocalizacao para descobrir quais motoristas tiveram ocorrência de eventos não normais.
+```
+geolocalizacao_temp1 = hiveContext.sql("SELECT diverid, COUNT(driverid) occurance FROM geolocalizacao_temp0 WHERE event!='normal' GROUP BY driverid")
+
+geolocalizacao_temp1.show(15)
+```
+Aqui está o resultado parcial de motoristas com eventos anormais.
+--- IMAGEM geolocalizacao_temp1 ----
+
+
+Registraremos esta tabela filtrada como uma tabela temporária para que as consultas SQL subsequentes possam ser aplicadas a ela.
+```
+geolocalizacao_temp1.createOrReplaceTempView("geolocalizacao_temp1")
+hiveContext.sql("SHOW TABLES").show()
+```
+
+Agora e possível vizualizar os dados da tabela através de consultas SQL e ver o total de eventos anormais para cada motorista.
+```
+hiveContext.sql("SELECT * FROM geolocalizacao_temp1 LIMIT 15").show()
+```
+
+---IMAGEM DA CONSULTA SQL---
+
+## Executar uma junção
+
+Agora precisamso realizar uma operação de junção. A tabela geolocalizacao_temp1 possui os dados dos motoristas que possuem eventos anormais e a tabela motoristamilhas_temp0 possui o total de milhas percorridas por cada motorista. Vamos juntas esses dados que nos interessa em uma tabela só.
+```
+juncao = hiveContext.sql("SELECT a.driverid, a.occurance, b.totmilhas FROM geolocalizacao_temp1 a, motoristamilhas_temp0 b WHERE a.driverid=b.motoristaid")
+```
+
+Registraremos essa tabela juncao com uma tabela temporária para consultas SQL subsequentes.
+```
+juncao.createOrReplaceTempView("juncao")
+hiveContext.sql("SHOW TABLES").show()
+```
+--- IMAGEM DE TODAS AS TABELAS FEITAS ---
+
+Vamos ver como ficou a tabela juncao
+```
+hiveContext.sql("SELECT * FROM juncao LIMIT 15").show()
+```
+--- IMAGEM DA TABELA JUNCAO ---
+
+## Computanto o fator de risco para o motorista
+
+Nessa seção associaremos um "fator de risco do motorista" para cada motorista. Esse fator de risco do motorista é o numeor de ocorrências anormais sobre o numero total de milhas percorridas pelo motorista. Ou seja, uma número alto de ocorrências anormais em um curto período de milhas percorridas, é um indicador de alto risco. Vamkso fazer isso com uma consulta SQL.
+```
+fator_de_risco = hiveContext.sql("SELECT driverid,occurance,totmilhas, totmilhas/occurance fatorrisco FROM juncao")
+```
+
+Vamos criar a tabela temporária para consultas SQL e vermos como ficaram os dados.
+```
+fator_de_risco.createOrReplaceTempView("fator_de_risco")
+hiveContext.sql("SHOW TABLES").show()
+
+hiveContext.sql("SELECT * FROM juncao LIMIT 15").show()
+```
+--- IMAGEM FATOR DE RISCO ----
+
+## Salvando a tabela como CSV
+
+Agara que encontramos o fator de risco para cada motorista, podemos salvar esse resultado como um arquivo CSV no HDFS.
+```
+fator_de_risco.coalesce(1).write.csv("hdfs:///tmp/data/fatorderisco")
+```
+
+
+
