@@ -107,7 +107,7 @@ DROP TABLE ext_caminhoes;
 
 Até agora somente preparamos os dados para podermos efetivamente começar a realizar algumas análizes. Nosso objetivo principal será esclarecer os riscos que a empresa corre devido o cansaço dos motoristas, caminhões usados e o impacto de vários eventos de transporte sobre o risco.
 
-Vamos começar calculando a quantidade de milhas por galão que cada caminhão consome. Começaremos com nossa tabela de dados de caminhões. Precisamos somar todas as milhas e colunas de combustível por caminhão. O Hive tem uma série de funções que podem ser usadas para reformatar uma tabela. A palavra-chave LATERAL VIEW é como invocamos as coisas. A função stack() nos permite reestruturar os dados em 3 colunas rotuladas rdate, gas e mile (ex: 'june13', june13_miles, june13_gas) que perfazem um máximo de 54 linhas. Escolhemos truckid, driverid, rdate, miles, gas de nossa tabela original e adicionamos uma coluna chamada mpg que calculada a milhagem média (miles/gas).
+Vamos começar calculando a quantidade de milhas por galão que cada caminhão consome. Começaremos com nossa tabela de dados de caminhões. Precisamos somar todas as milhas e colunas de combustível por caminhão. O Hive tem uma série de funções que podem ser usadas para reformatar uma tabela. A palavra-chave LATERAL VIEW é como invocamos as coisas. A função stack() nos permite reestruturar os dados em 3 colunas rotuladas data, milhas, combustivel (ex: 'june13', june13_miles, june13_gas) que perfazem um máximo de 54 linhas. Escolhemos caminhaoid, motoristaid, data, milhas, combustivel de nossa tabela original e adicionamos uma coluna chamada mpg que calculada a milhagem média (milhas/combustivel).
 
 ```
 CREATE TABLE milhascaminhao 
@@ -137,34 +137,34 @@ SELECT * FROM mediamilhas LIMIT 15;
 ![MediaMilhagem](https://github.com/BrunoHarlis/FatorDeRisco/blob/main/ImagensFatorDeRisco/MediaMilhagem.png)
 
 
-Agora vamos criar a tabela MotoristaMilhagem usando a tabela MilhasCaminhao. Nela conterá o total de milhas (totmiles) percorrida or cada motorista.
+Agora vamos criar a tabela MotoristaMilhas usando a tabela MilhasCaminhao. Nela conterá o total de milhas (totmilhas) percorrida por cada motorista.
 ```
-CREATE TABLE MotoristaMilhagem
+CREATE TABLE MotoristaMilhas
 STORED AS ORC
 AS
-SELECT driverid, sum(miles) totmiles
+SELECT motoristaid, sum(milhas) totmilhas
 FROM milhascaminhao
-GROUP BY driverid;
+GROUP BY motoristaid;
 ```
 
-Vamos ver uma a mostra da tabela MotoristaMilhagem.
+Vamos ver uma a mostra da tabela MotoristaMilhas.
 ```
-SELECT * FROM MotoristaMilhagem LIMIT 15
+SELECT * FROM MotoristaMilhas LIMIT 15;
 ```
 
 ![MotoristaMilhagem](https://github.com/BrunoHarlis/FatorDeRisco/blob/main/ImagensFatorDeRisco/MotoristaMilhagem.png)
 
-Usaremos esses resultados para calcular todos os fatores de risco dos caminhoneiros. Faremos isso através do Spark. Primeiro, vamos armazenar nossa tabela MotoristaMilhagem em formato CSV no HDFS.
+Usaremos esses resultados para calcular todos os fatores de risco dos caminhoneiros. Faremos isso através do Spark. Primeiro, vamos armazenar nossa tabela MotoristaMilhas em formato CSV no HDFS.
 
 ```
-INSERT OVERWRITE DIRECTORY 'hdfs:///tmp/data/motoristamilhagem'
+INSERT OVERWRITE DIRECTORY 'hdfs:///tmp/data/motoristamilhas'
 ROW FORMAT DELIMITED 
 FIELDS TERMINATED BY ',' 
-select * from motoristamilhagem;
+SELECT * from motoristamilhas;
 ```
 
-Nesse momento foi exportado o arquivo 000000_0, vamos renomea-lo para motoristamilhagem.csv
-```hdfs dfs -mv /tmp/data/motoristamilhagem/000000_0 /tmp/data/motoristamilhagem/motoristamilhagem.csv```
+Nesse momento foi exportado o arquivo 000000_0, vamos renomea-lo para motoristamilhas.csv
+```hdfs dfs -mv /tmp/data/motoristamilhas/000000_0 /tmp/data/motoristamilhas/motoristamilhas.csv```
 
 Agora finalmente vamos para a analize com Spark. O Script completo .py está [aqui]().
 
@@ -194,7 +194,7 @@ Aqui está uma amostra da tabela temporária geolocalização que acabamos de cr
 ![spark_geolocalizacao](https://github.com/BrunoHarlis/FatorDeRisco/blob/main/ImagensFatorDeRisco/spark_geolocalizacao.png)
 
 
-Se olharmos a descrição da tabela, percebemos que todos os dados foram lançados como String, pois não especificamos nenhum schema.
+Se olharmos a descrição da tabela, percebemos que todos os dados foram lançados como String, e as colunas com nomes em inglês pois não especificamos nenhum schema.
 ```
 hiveContext.sql("DESCRIBE geolocalizacao").show()
 ```
@@ -206,22 +206,22 @@ Em contrapartida, vamos carreagar dados de um arquivo csv para um DataFrame, só
 ```
 from pyspark.sql.types import *
 
-motoristaMilhagemSchema = StructType().add("driverid", "string", True).add("totmiles", "double", True)
-motoristaMilhagemDF = spark.read.csv('hdfs:///tmp/data/motoristamilhagem/motoristamilhagem.csv', header=True, schema=motoristaMilhagemSchema)
+motoristaMilhasSchema = StructType().add("motoristaid", "string", True).add("totmilhas", "double", True)
+motoristaMilhasDF = spark.read.csv('hdfs:///tmp/data/motoristamilhas/motoristamilhas.csv', header=True, schema=motoristaMilhasSchema)
 ```
 
-Agora vamis criar uma Temp View (motoristamilhagem) do dataframe "motoristaMilhagemDF" e ver se a tabela possui o schema que definimos.
+Agora vamos criar uma Temp View (motoristamilhas) do dataframe "motoristaMilhasDF" e ver se a tabela possui o schema que definimos.
 ```
-motoristaMilhagemDF.createOrReplaceTempView("motoristamilhagem")
-hiveContext.sql("DESC  motoristamilhagem").show()
+motoristaMilhasDF.createOrReplaceTempView("motoristamilhas")
+hiveContext.sql("DESC  motoristamilhas").show()
 ```
 
 ![DESC  motoristamilhagem](https://github.com/BrunoHarlis/FatorDeRisco/blob/main/ImagensFatorDeRisco/spark_desc_motoristamilhagem.png)
 
 
-Aqui está uma amostra de como a tabela "motoristaMilhagem" ficou.
+Aqui está uma amostra de como a tabela "motoristaMilhas" ficou.
 ```
-hiveContext.sql("SELECT * FROM motoristamilhagem LIMIT 15").show()
+hiveContext.sql("SELECT * FROM motoristamilhas LIMIT 15").show()
 ```
 
 ![IMAGEM SPARK MOTORISTAMILHAGEM](https://github.com/BrunoHarlis/FatorDeRisco/blob/main/ImagensFatorDeRisco/spark_motoristamilhagem.png)
