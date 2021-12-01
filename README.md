@@ -250,7 +250,7 @@ geolocalizacao_temp1.show(15)
 
 Aqui está o resultado parcial de motoristas com eventos anormais.
 
-[eventos anormais](https://github.com/BrunoHarlis/FatorDeRisco/blob/main/ImagensFatorDeRisco/geolocalizacao_temp1.png)
+![eventos anormais](https://github.com/BrunoHarlis/FatorDeRisco/blob/main/ImagensFatorDeRisco/geolocalizacao_temp1.png)
 
 
 Registraremos esta tabela filtrada como uma tabela temporária para que as consultas SQL subsequentes possam ser aplicadas a ela.
@@ -263,7 +263,7 @@ Agora é possível vizualizar os dados da tabela através de consultas SQL e ver
 hiveContext.sql("SELECT * FROM geolocalizacao_temp1 LIMIT 15").show()
 ```
 
-[](https://github.com/BrunoHarlis/FatorDeRisco/blob/main/ImagensFatorDeRisco/geolocalizacao_temp1.png)
+![eventos anormais SQL](https://github.com/BrunoHarlis/FatorDeRisco/blob/main/ImagensFatorDeRisco/consulta%20sql%20geolocalizacao_temp1.png)
 
 ## Executar uma junção
 
@@ -277,13 +277,13 @@ Registraremos essa tabela juncao com uma tabela temporária para consultas SQL s
 juncao.createOrReplaceTempView("juncao")
 hiveContext.sql("SHOW TABLES").show()
 ```
-[todas as tabelas](https://github.com/BrunoHarlis/FatorDeRisco/blob/main/ImagensFatorDeRisco/totas%20tabelas%20ate%20juncao.png)
+![todas as tabelas](https://github.com/BrunoHarlis/FatorDeRisco/blob/main/ImagensFatorDeRisco/totas%20tabelas%20ate%20juncao.png)
 
 Vamos ver como ficou a tabela juncao
 ```
 hiveContext.sql("SELECT * FROM juncao LIMIT 15").show()
 ```
-[juncao](https://github.com/BrunoHarlis/FatorDeRisco/blob/main/ImagensFatorDeRisco/tabela%20juncao.png)
+![juncao](https://github.com/BrunoHarlis/FatorDeRisco/blob/main/ImagensFatorDeRisco/tabela%20juncao.png)
 
 ## Computanto o fator de risco para o motorista
 
@@ -298,12 +298,12 @@ fator_de_risco.createOrReplaceTempView("fator_de_risco")
 hiveContext.sql("SHOW TABLES").show()
 ```
 
-[todas as tabelas criadas](https://github.com/BrunoHarlis/FatorDeRisco/blob/main/ImagensFatorDeRisco/todas%20as%20tabelas%20fatorderisco.png)
+![todas as tabelas criadas](https://github.com/BrunoHarlis/FatorDeRisco/blob/main/ImagensFatorDeRisco/todas%20as%20tabelas%20fatorderisco.png)
 
 ```
 hiveContext.sql("SELECT * FROM fator_de_risco LIMIT 15").show()
 ```
-[fator de risco](https://github.com/BrunoHarlis/FatorDeRisco/blob/main/ImagensFatorDeRisco/fator%20de%20risco%202.png)
+![fator de risco](https://github.com/BrunoHarlis/FatorDeRisco/blob/main/ImagensFatorDeRisco/fator%20de%20risco%202.png)
 
 ## Salvando a tabela como CSV
 
