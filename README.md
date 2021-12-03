@@ -166,7 +166,7 @@ SELECT * from motoristamilhas;
 Nesse momento foi exportado o arquivo 000000_0, vamos renomea-lo para motoristamilhas.csv
 ```hdfs dfs -mv /tmp/data/motoristamilhas/000000_0 /tmp/data/motoristamilhas/motoristamilhas.csv```
 
-Agora finalmente vamos para a analize com Spark. O Script completo .py está [aqui]().
+Agora finalmente vamos para a analize com Spark. O Script completo .py está [aqui](https://github.com/BrunoHarlis/FatorDeRisco/blob/main/script/fator_de_risco.py).
 
 
 Importando a biblioteca sql e instanciando SparkSession
