@@ -17,7 +17,7 @@ __caminhoes.csv__ - Possui informações sobre o modelo de caminhão, motoristai
 hdfs dfs -mkdir -p /tmp/data/{geolocalizacao,caminhoes}
 ```
 
-#### Definir permissão de gravação no diretório external
+#### Definir permissão de gravação no diretório data
 ```
 hdfs dfs -chmod 777 /tmp/data
 ```
