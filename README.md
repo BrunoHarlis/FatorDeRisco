@@ -243,7 +243,7 @@ hiveContext.sql("SHOW TABLES").show()
 
 Agora vamos fazer uma filtragem nos dados da tabela geolocalizacao para descobrir quais motoristas tiveram ocorrência de eventos não normais.
 ```
-geolocalizacao_temp1 = hiveContext.sql("SELECT diverid, COUNT(driverid) occurance FROM geolocalizacao_temp0 WHERE event!='normal' GROUP BY driverid")
+geolocalizacao_temp1 = hiveContext.sql("SELECT driverid, COUNT(driverid) occurance FROM geolocalizacao_temp0 WHERE event!='normal' GROUP BY driverid")
 
 geolocalizacao_temp1.show(15)
 ```
