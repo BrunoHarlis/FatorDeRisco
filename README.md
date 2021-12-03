@@ -237,8 +237,6 @@ E agora vamos criar tabelas globais temporárias a partir dos DataFrames que cri
 ```
 geolocalizacao_temp0.createOrReplaceTempView("geolocalizacao_temp0")
 motoristamilhas_temp0.createOrReplaceTempView("motoristamilhas_temp0")
-
-hiveContext.sql("SHOW TABLES").show()
 ```
 
 Agora vamos fazer uma filtragem nos dados da tabela geolocalizacao para descobrir quais motoristas tiveram ocorrência de eventos não normais.
